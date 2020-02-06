@@ -43,7 +43,7 @@ const validateOptions = ({fromBucket, fromPath}) => {
 
 module.exports = (storage) => (options) => {
     validateOptions(options);
-    const {fromBucket, fromPath, toBucket, toPath, keep, mapper, metadata, progress, downloadValidation} = options;
+    const {fromBucket, fromPath, toBucket, toPath, toStream, keep, mapper, metadata, progress, downloadValidation} = options;
 
     if ((!keep) && (!toBucket)) {
         return Promise.resolve(null);
@@ -63,6 +63,15 @@ module.exports = (storage) => (options) => {
             keepOutput.on('error', reject);
         });
     }
+
+    if (toStream) {
+        zip.pipe(toStream);
+        streamPromise = new Promise((resolve, reject) => {
+            toStream.on('close', resolve);
+            toStream.on('error', reject);
+        });
+    }
+
     if (toBucket) {
         const uploadOptions = {destination: toPath, validation: 'md5', metadata: {contentType: 'application/zip'}};
         if (typeof(metadata) === 'object') {
